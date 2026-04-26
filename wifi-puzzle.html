@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔐 WiFi Puzzle</title>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0a0f;
+    color: #e8e0d0;
+    font-family: 'Courier Prime', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 50%, rgba(255,140,0,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(255,200,50,0.04) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .card {
+    background: #111118;
+    border: 1px solid #2a2a38;
+    border-radius: 4px;
+    padding: 40px 36px;
+    max-width: 560px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 0 60px rgba(255,140,0,0.07), 0 20px 60px rgba(0,0,0,0.6);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #ff8c00, #ffd700, transparent);
+    border-radius: 4px 4px 0 0;
+  }
+
+  .top-label {
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 4px;
+    font-size: 11px;
+    color: #ff8c00;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    opacity: 0.8;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 3px;
+    color: #fff8ee;
+    margin-bottom: 6px;
+    line-height: 1;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    color: #555568;
+    margin-bottom: 32px;
+    letter-spacing: 1px;
+  }
+
+  .clue-block {
+    border: 1px solid #1e1e2e;
+    border-radius: 3px;
+    padding: 20px;
+    margin-bottom: 12px;
+    position: relative;
+    background: #0d0d14;
+    transition: border-color 0.3s;
+  }
+
+  .clue-block.solved {
+    border-color: #3a8a3a;
+    background: #0a140a;
+  }
+
+  .clue-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: #ff8c00;
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    opacity: 0.5;
+  }
+
+  .clue-block.solved .clue-number {
+    color: #4caf50;
+    opacity: 0.7;
+  }
+
+  .clue-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #444460;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .clue-text {
+    font-size: 15px;
+    color: #c8c0b0;
+    line-height: 1.6;
+    margin-bottom: 14px;
+    padding-right: 36px;
+  }
+
+  .answer-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .letter-input {
+    width: 36px;
+    height: 40px;
+    background: #0a0a0f;
+    border: 1px solid #2a2a38;
+    border-radius: 3px;
+    color: #ffd700;
+    font-family: 'Courier Prime', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    text-transform: lowercase;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    caret-color: #ff8c00;
+  }
+
+  .letter-input:focus {
+    border-color: #ff8c00;
+    background: #0f0f18;
+  }
+
+  .letter-input.correct {
+    border-color: #4caf50;
+    color: #4caf50;
+    background: #0a140a;
+    pointer-events: none;
+  }
+
+  .letter-input.wrong {
+    border-color: #c0392b;
+    animation: shake 0.3s;
+  }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  .check-btn {
+    background: none;
+    border: 1px solid #ff8c00;
+    color: #ff8c00;
+    font-family: 'Courier Prime', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 8px 14px;
+    border-radius: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.2s, color 0.2s;
+    margin-left: 4px;
+    white-space: nowrap;
+  }
+
+  .check-btn:hover {
+    background: #ff8c00;
+    color: #0a0a0f;
+  }
+
+  .hint-toggle {
+    font-size: 11px;
+    color: #444460;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    margin-top: 8px;
+    display: inline-block;
+    letter-spacing: 1px;
+    transition: color 0.2s;
+  }
+
+  .hint-toggle:hover { color: #888899; }
+
+  .hint-text {
+    font-size: 12px;
+    color: #888877;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-left: 2px solid #2a2a38;
+    display: none;
+    font-style: italic;
+  }
+
+  .hint-text.visible { display: block; }
+
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e2e;
+    margin: 28px 0;
+  }
+
+  .reveal-zone {
+    text-align: center;
+    padding: 24px;
+    border: 1px dashed #2a2a38;
+    border-radius: 3px;
+    background: #0d0d14;
+  }
+
+  .reveal-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #444460;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .password-boxes {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .pw-box {
+    width: 38px;
+    height: 44px;
+    border: 1px solid #2a2a38;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    color: #0d0d14;
+    background: #0d0d14;
+    transition: all 0.4s;
+    position: relative;
+  }
+
+  .pw-box.filled {
+    color: #ffd700;
+    background: #111118;
+    border-color: #3a3a50;
+  }
+
+  .pw-box.all-done {
+    color: #ffd700;
+    background: #111118;
+    border-color: #ffd700;
+    box-shadow: 0 0 12px rgba(255,215,0,0.2);
+    animation: pop 0.4s ease;
+  }
+
+  @keyframes pop {
+    0% { transform: scale(0.8); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .success-msg {
+    display: none;
+    font-size: 12px;
+    color: #ffd700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    animation: fadeIn 0.6s ease;
+  }
+
+  .success-msg.visible { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .wifi-icon {
+    font-size: 11px;
+    color: #ff8c00;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    opacity: 0.6;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="top-label">🛜 WiFi Access</div>
+  <h1>CRACK THE CODE</h1>
+  <p class="subtitle">// solve all 8 clues — each answer is one letter</p>
+
+  <!-- Clue 1: p -->
+  <div class="clue-block" id="block-1">
+    <div class="clue-number">1</div>
+    <div class="clue-label">Clue #1</div>
+    <div class="clue-text">I start every piano scale.<br>I'm the 16th letter of the alphabet.</div>
+    <div class="answer-row">
+      <input class="letter-input" maxlength="1" data-answer="p" data-pos="0" id="inp-1" placeholder="?">
+      <button class="check-btn" onclick="check(1)">Check</button>
+    </div>
+    <span class="hint-toggle" onclick="toggleHint(1)">show hint</span>
+    <div class="hint-text" id="hint-1">Think: _iano, _izza, _urple</div>
+  </div>
+
+  <!-- Clue 2: a -->
+  <div class="clue-block" id="block-2">
+    <div class="clue-number">2</div>
+    <div class="clue-label">Clue #2</div>
+    <div class="clue-text">The first vowel, the first letter.<br>An apple a day keeps the doctor away — I'm the article before it.</div>
+    <div class="answer-row">
+      <input class="letter-input" maxlength="1" data-answer="a" data-pos="1" id="inp-2" placeholder="?">
+      <button class="check-btn" onclick="check(2)">Check</button>
+    </div>
+    <span class="hint-toggle" onclick="toggleHint(2)">show hint</span>
+    <div class="hint-text" id="hint-2">The very first letter of the alphabet.</div>
+  </div>
+
+  <!-- Clue 3: s -->
+  <div class="clue-block" id="block-3">
+    <div class="clue-number">3</div>
+    <div class="clue-label">Clue #3</div>
+    <div class="clue-text">A snake hisses with me.<br>Saturday and Sunday both start with me.</div>
+    <div class="answer-row">
+      <input class="letter-input" maxlength="1" data-answer="s" data-pos="2" id="inp-3" placeholder="?">
+      <button class="check-btn" onclick="check(3)">Check</button>
+    </div>
+    <span class="hint-toggle" onclick="toggleHint(3)">show hint</span>
+    <div class="hint-text" id="hint-3">Think: _nake, _un, _tars</div>
+  </div>
+
+  <!-- Clue 4: s -->
+  <div class="clue-block" id="block-4">
+    <div class="clue-number">4</div>
+    <div class="clue-label">Clue #4</div>
+    <div class="clue-text">Same as clue #3.<br>(Some letters just love to repeat.)</div>
+    <div class="answer-row">
+      <input class="letter-input" maxlength="1" data-answer="s" data-pos="3" id="inp-4" placeholder="?">
+      <button class="check-btn" onclick="check(4)">Check</button>
+    </div>
+    <span class="hint-toggle" onclick="toggleHint(4)">show hint</span>
+    <div class="hint-text" id="hint-4">Exactly the same letter as #3.</div>
+  </div>
+
+  <!-- Clue 5: w -->
+  <div class="clue-block" id="block-5">
+    <div class="clue-number">5</div>
+    <div class="clue-label">Clue #5</div>
+    <div class="clue-text">I start every question: Who, What, When, Where, and me.<br>Water flows with me; I'm also the shape of a wave.</div>
+    <div class="answer-row">
+      <input class="letter-input" maxlength="1" data-answer="w" data-pos="4" id="inp-5" placeholder="?">
+      <button class="check-btn" onclick="check(5)">Check</button>
+    </div>
+    <span class="hint-toggle" onclick="toggleHint(5)">show hint</span>
+    <div class="hint-text" id="hint-5">Think: _ater, _ind, _hy</div>
+  </div>
+
+  <!-- Clue 6: o -->
+  <div class="clue-block" id="block-6">
+    <div class="clue-number">6</div>
+    <div class="clue-label">Clue #6</div>
+    <div class="clue-text">I'm a perfect circle — zero, the letter O.<br>I'm the 15th letter, the fourth vowel.</div>
+    <div class="answer-row">
+      <input class="letter-input" maxlength="1" data-answer="o" data-pos="5" id="inp-6" placeholder="?">
+      <button class="check-btn" onclick="check(6)">Check</button>
+    </div>
+    <span class="hint-toggle" onclick="toggleHint(6)">show hint</span>
+    <div class="hint-text" id="hint-6">Think: _ctopus, _range, _cean</div>
+  </div>
+
+  <!-- Clue 7: r -->
+  <div class="clue-block" id="block-7">
+    <div class="clue-number">7</div>
+    <div class="clue-label">Clue #7</div>
+    <div class="clue-text">Pirates say "Arrr!" because of me.<br>Rainbow and red both start with me. I'm the 18th letter.</div>
+    <div class="answer-row">
+      <input class="letter-input" maxlength="1" data-answer="r" data-pos="6" id="inp-7" placeholder="?">
+      <button class="check-btn" onclick="check(7)">Check</button>
+    </div>
+    <span class="hint-toggle" onclick="toggleHint(7)">show hint</span>
+    <div class="hint-text" id="hint-7">Think: _ain, _ocket, _iver</div>
+  </div>
+
+  <!-- Clue 8: d -->
+  <div class="clue-block" id="block-8">
+    <div class="clue-number">8</div>
+    <div class="clue-label">Clue #8</div>
+    <div class="clue-text">I'm the 4th letter of the alphabet.<br>Dog, door, and dream all begin with me.</div>
+    <div class="answer-row">
+      <input class="letter-input" maxlength="1" data-answer="d" data-pos="7" id="inp-8" placeholder="?">
+      <button class="check-btn" onclick="check(8)">Check</button>
+    </div>
+    <span class="hint-toggle" onclick="toggleHint(8)">show hint</span>
+    <div class="hint-text" id="hint-8">Think: _uck, _ay, _iamond</div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="reveal-zone">
+    <div class="wifi-icon">▲ ▲ ▲ WiFi Password ▲ ▲ ▲</div>
+    <div class="reveal-label">Your Password</div>
+    <div class="password-boxes">
+      <div class="pw-box" id="pw-0">?</div>
+      <div class="pw-box" id="pw-1">?</div>
+      <div class="pw-box" id="pw-2">?</div>
+      <div class="pw-box" id="pw-3">?</div>
+      <div class="pw-box" id="pw-4">?</div>
+      <div class="pw-box" id="pw-5">?</div>
+      <div class="pw-box" id="pw-6">?</div>
+      <div class="pw-box" id="pw-7">?</div>
+    </div>
+    <div class="success-msg" id="success-msg">🎉 You're in! Connect and enjoy!</div>
+  </div>
+</div>
+
+<script>
+  const solved = new Array(8).fill(false);
+
+  function check(n) {
+    const input = document.getElementById('inp-' + n);
+    const answer = input.dataset.answer;
+    const pos = parseInt(input.dataset.pos);
+    const val = input.value.trim().toLowerCase();
+
+    if (val === answer) {
+      input.classList.remove('wrong');
+      input.classList.add('correct');
+      input.value = answer;
+      document.getElementById('block-' + n).classList.add('solved');
+      solved[pos] = true;
+      revealLetter(pos, answer);
+    } else {
+      input.classList.remove('wrong');
+      void input.offsetWidth; // reflow for re-trigger
+      input.classList.add('wrong');
+      setTimeout(() => input.classList.remove('wrong'), 400);
+    }
+  }
+
+  function revealLetter(pos, letter) {
+    const box = document.getElementById('pw-' + pos);
+    box.textContent = letter;
+    box.classList.add('filled');
+
+    if (solved.every(Boolean)) {
+      setTimeout(() => {
+        document.querySelectorAll('.pw-box').forEach(b => b.classList.add('all-done'));
+        document.getElementById('success-msg').classList.add('visible');
+      }, 300);
+    }
+  }
+
+  function toggleHint(n) {
+    const hint = document.getElementById('hint-' + n);
+    hint.classList.toggle('visible');
+  }
+
+  // Allow pressing Enter to check
+  document.querySelectorAll('.letter-input').forEach(inp => {
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const n = inp.id.split('-')[1];
+        check(parseInt(n));
+      }
+    });
+  });
+</script>
+</body>
+</html>
