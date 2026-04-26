@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLASSIFIED</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #00ff88;
+    --dim-green: #00aa55;
+    --dark-green: #003322;
+    --red: #ff3333;
+    --bg: #020a04;
+    --panel: #040d06;
+    --border: #0a2a14;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Scanlines */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.15) 2px,
+      rgba(0,0,0,0.15) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  /* CRT flicker */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.6) 100%);
+    pointer-events: none;
+    z-index: 99;
+    animation: flicker 8s infinite;
+  }
+
+  @keyframes flicker {
+    0%,100% { opacity: 1; }
+    92% { opacity: 1; }
+    92.5% { opacity: 0.7; }
+    93% { opacity: 1; }
+    97% { opacity: 1; }
+    97.3% { opacity: 0.8; }
+    97.6% { opacity: 1; }
+  }
+
+  .terminal {
+    width: 100%;
+    max-width: 640px;
+    position: relative;
+  }
+
+  .title-block {
+    text-align: center;
+    margin-bottom: 32px;
+    position: relative;
+  }
+
+  .classified-stamp {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 6px;
+    color: var(--red);
+    border: 1px solid var(--red);
+    display: inline-block;
+    padding: 3px 12px;
+    margin-bottom: 14px;
+    opacity: 0.8;
+    animation: blink-border 2s infinite;
+  }
+
+  @keyframes blink-border {
+    0%,100% { border-color: var(--red); }
+    50% { border-color: transparent; }
+  }
+
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: var(--green);
+    text-shadow: 0 0 20px rgba(0,255,136,0.5), 0 0 40px rgba(0,255,136,0.2);
+    margin-bottom: 6px;
+  }
+
+  .sub {
+    font-size: 11px;
+    color: var(--dim-green);
+    letter-spacing: 3px;
+    opacity: 0.6;
+  }
+
+  /* Progress bar */
+  .progress-bar-wrap {
+    background: #020d04;
+    border: 1px solid var(--border);
+    height: 6px;
+    border-radius: 0;
+    margin-bottom: 28px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--dark-green), var(--green));
+    transition: width 0.5s ease;
+    box-shadow: 0 0 10px var(--green);
+  }
+
+  /* Clue cards */
+  .clue-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .clue {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    padding: 16px 18px;
+    position: relative;
+    transition: border-color 0.3s;
+  }
+
+  .clue::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--dim-green);
+    opacity: 0.3;
+    transition: opacity 0.3s, background 0.3s;
+  }
+
+  .clue.cracked::before {
+    background: var(--green);
+    opacity: 1;
+    box-shadow: 0 0 8px var(--green);
+  }
+
+  .clue.cracked {
+    border-color: #0a3a1a;
+  }
+
+  .clue-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .clue-id {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    color: var(--dim-green);
+    letter-spacing: 3px;
+    opacity: 0.5;
+  }
+
+  .clue.cracked .clue-id { opacity: 0.3; }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #1a3a22;
+    border: 1px solid var(--border);
+    margin-top: 2px;
+    flex-shrink: 0;
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+
+  .clue.cracked .status-dot {
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+  }
+
+  .clue-text {
+    font-size: 13px;
+    color: #88ccaa;
+    line-height: 1.7;
+    margin-bottom: 13px;
+    letter-spacing: 0.3px;
+  }
+
+  .clue.cracked .clue-text {
+    color: #446655;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .answer-input {
+    width: 44px;
+    height: 38px;
+    background: #010802;
+    border: 1px solid #0a2a14;
+    color: var(--green);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    text-transform: lowercase;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    caret-color: var(--green);
+  }
+
+  .answer-input:focus {
+    border-color: var(--dim-green);
+    box-shadow: 0 0 10px rgba(0,255,136,0.1), inset 0 0 6px rgba(0,255,136,0.05);
+  }
+
+  .answer-input.ok {
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 12px rgba(0,255,136,0.3);
+    pointer-events: none;
+  }
+
+  .answer-input.fail {
+    border-color: var(--red);
+    animation: glitch 0.3s;
+  }
+
+  @keyframes glitch {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-5px) skewX(-3deg); }
+    40% { transform: translateX(5px) skewX(3deg); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+  }
+
+  .submit-btn {
+    background: transparent;
+    border: 1px solid var(--dim-green);
+    color: var(--dim-green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 9px 16px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    height: 38px;
+  }
+
+  .submit-btn:hover:not(:disabled) {
+    background: var(--dark-green);
+    color: var(--green);
+    border-color: var(--green);
+    box-shadow: 0 0 12px rgba(0,255,136,0.15);
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.2;
+    cursor: default;
+  }
+
+  .attempts {
+    font-size: 10px;
+    color: #1a4a28;
+    letter-spacing: 1px;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  .attempts.warn { color: #aa4400; }
+
+  /* Output block */
+  .output-panel {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    padding: 24px;
+    position: relative;
+  }
+
+  .output-panel::before {
+    content: 'ACCESS KEY';
+    position: absolute;
+    top: -9px;
+    left: 16px;
+    background: var(--panel);
+    padding: 0 8px;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--dim-green);
+    opacity: 0.6;
+  }
+
+  .key-display {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .key-cell {
+    width: 40px;
+    height: 46px;
+    border: 1px solid #0a2a14;
+    background: #010802;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #010802;
+    transition: all 0.5s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .key-cell.revealed {
+    color: var(--green);
+    border-color: var(--dim-green);
+    text-shadow: 0 0 10px var(--green);
+    background: #010f04;
+  }
+
+  .key-cell.all-revealed {
+    border-color: var(--green);
+    box-shadow: 0 0 16px rgba(0,255,136,0.25);
+    animation: cell-pop 0.5s ease forwards;
+  }
+
+  @keyframes cell-pop {
+    0% { transform: scale(0.85); opacity: 0.3; }
+    60% { transform: scale(1.08); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .decrypt-line {
+    text-align: center;
+    font-size: 11px;
+    color: var(--dim-green);
+    letter-spacing: 3px;
+    opacity: 0.4;
+  }
+
+  .decrypt-line.active {
+    opacity: 1;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .success-line {
+    text-align: center;
+    font-size: 13px;
+    color: var(--green);
+    letter-spacing: 4px;
+    text-shadow: 0 0 20px var(--green);
+    margin-top: 12px;
+    display: none;
+    animation: fadeUp 0.8s ease;
+  }
+
+  .success-line.show { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Scramble animation on wrong */
+  .scramble {
+    animation: scramble-anim 0.4s;
+  }
+
+  @keyframes scramble-anim {
+    0% { opacity: 1; }
+    30% { opacity: 0.2; }
+    60% { opacity: 0.8; }
+    100% { opacity: 1; }
+  }
+
+  .fail-msg {
+    font-size: 10px;
+    color: var(--red);
+    letter-spacing: 2px;
+    margin-left: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .fail-msg.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="terminal">
+  <div class="title-block">
+    <div class="classified-stamp">⚠ CLASSIFIED ⚠</div>
+    <h1>DECRYPT</h1>
+    <p class="sub">// 8 CIPHERS — NO ASSISTANCE — NO MERCY</p>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progress"></div>
+  </div>
+
+  <div class="clue-grid" id="clue-grid">
+
+    <!-- CLUE 1 → p -->
+    <div class="clue" id="clue-1">
+      <div class="clue-header">
+        <span class="clue-id">CIPHER_01</span>
+        <div class="status-dot"></div>
+      </div>
+      <div class="clue-text">
+        I am the loneliest number that exists between O and Q.<br>
+        In music, I am the key before A minor.<br>
+        Mathematically, I am the only even prime's neighbor that is neither prime nor composite — and also the first letter of that Greek constant you know well.
+      </div>
+      <div class="input-row">
+        <input class="answer-input" maxlength="1" data-ans="p" data-pos="0" id="i1" autocomplete="off" spellcheck="false">
+        <button class="submit-btn" onclick="attempt(1)">SUBMIT</button>
+        <span class="attempts" id="att-1">■■■■■</span>
+        <span class="fail-msg" id="fail-1">DENIED</span>
+      </div>
+    </div>
+
+    <!-- CLUE 2 → a -->
+    <div class="clue" id="clue-2">
+      <div class="clue-header">
+        <span class="clue-id">CIPHER_02</span>
+        <div class="status-dot"></div>
+      </div>
+      <div class="clue-text">
+        In music theory, the sixth note of C major.<br>
+        The shape of the strongest arch known to ancient builders.<br>
+        Blood type that accepts no other — the first, and the most exclusive.
+      </div>
+      <div class="input-row">
+        <input class="answer-input" maxlength="1" data-ans="a" data-pos="1" id="i2" autocomplete="off" spellcheck="false">
+        <button class="submit-btn" onclick="attempt(2)">SUBMIT</button>
+        <span class="attempts" id="att-2">■■■■■</span>
+        <span class="fail-msg" id="fail-2">DENIED</span>
+      </div>
+    </div>
+
+    <!-- CLUE 3 → s -->
+    <div class="clue" id="clue-3">
+      <div class="clue-header">
+        <span class="clue-id">CIPHER_03</span>
+        <div class="status-dot"></div>
+      </div>
+      <div class="clue-text">
+        The 19th element of the sequence, but not the periodic table.<br>
+        In Roman numerals I am not a number — yet I look like one that is.<br>
+        The mathematical symbol for summation wears my shape. What am I?
+      </div>
+      <div class="input-row">
+        <input class="answer-input" maxlength="1" data-ans="s" data-pos="2" id="i3" autocomplete="off" spellcheck="false">
+        <button class="submit-btn" onclick="attempt(3)">SUBMIT</button>
+        <span class="attempts" id="att-3">■■■■■</span>
+        <span class="fail-msg" id="fail-3">DENIED</span>
+      </div>
+    </div>
+
+    <!-- CLUE 4 → s -->
+    <div class="clue" id="clue-4">
+      <div class="clue-header">
+        <span class="clue-id">CIPHER_04</span>
+        <div class="status-dot"></div>
+      </div>
+      <div class="clue-text">
+        The answer to CIPHER_03, encoded once more — but this time,<br>
+        the cipher key is a mirror.<br>
+        Reflect your previous answer. What do you see?
+      </div>
+      <div class="input-row">
+        <input class="answer-input" maxlength="1" data-ans="s" data-pos="3" id="i4" autocomplete="off" spellcheck="false">
+        <button class="submit-btn" onclick="attempt(4)">SUBMIT</button>
+        <span class="attempts" id="att-4">■■■■■</span>
+        <span class="fail-msg" id="fail-4">DENIED</span>
+      </div>
+    </div>
+
+    <!-- CLUE 5 → w -->
+    <div class="clue" id="clue-5">
+      <div class="clue-header">
+        <span class="clue-id">CIPHER_05</span>
+        <div class="status-dot"></div>
+      </div>
+      <div class="clue-text">
+        Rotate the letter V by 180°.<br>
+        The 23rd. The only letter in the English alphabet<br>
+        whose name contains more than one syllable — and more than one of itself.
+      </div>
+      <div class="input-row">
+        <input class="answer-input" maxlength="1" data-ans="w" data-pos="4" id="i5" autocomplete="off" spellcheck="false">
+        <button class="submit-btn" onclick="attempt(5)">SUBMIT</button>
+        <span class="attempts" id="att-5">■■■■■</span>
+        <span class="fail-msg" id="fail-5">DENIED</span>
+      </div>
+    </div>
+
+    <!-- CLUE 6 → o -->
+    <div class="clue" id="clue-6">
+      <div class="clue-header">
+        <span class="clue-id">CIPHER_06</span>
+        <div class="status-dot"></div>
+      </div>
+      <div class="clue-text">
+        In Morse code, I am three dashes: — — —<br>
+        I am the symbol for a null set when crossed, and without the cross: nothing.<br>
+        The 15th. I contain myself.
+      </div>
+      <div class="input-row">
+        <input class="answer-input" maxlength="1" data-ans="o" data-pos="5" id="i6" autocomplete="off" spellcheck="false">
+        <button class="submit-btn" onclick="attempt(6)">SUBMIT</button>
+        <span class="attempts" id="att-6">■■■■■</span>
+        <span class="fail-msg" id="fail-6">DENIED</span>
+      </div>
+    </div>
+
+    <!-- CLUE 7 → r -->
+    <div class="clue" id="clue-7">
+      <div class="clue-header">
+        <span class="clue-id">CIPHER_07</span>
+        <div class="status-dot"></div>
+      </div>
+      <div class="clue-text">
+        In the NATO phonetic alphabet I am Romeo.<br>
+        The 18th. In chemistry, I denote the organic substituent<br>
+        attached to the rest of the molecule. P + 1 = ?
+      </div>
+      <div class="input-row">
+        <input class="answer-input" maxlength="1" data-ans="r" data-pos="6" id="i7" autocomplete="off" spellcheck="false">
+        <button class="submit-btn" onclick="attempt(7)">SUBMIT</button>
+        <span class="attempts" id="att-7">■■■■■</span>
+        <span class="fail-msg" id="fail-7">DENIED</span>
+      </div>
+    </div>
+
+    <!-- CLUE 8 → d -->
+    <div class="clue" id="clue-8">
+      <div class="clue-header">
+        <span class="clue-id">CIPHER_08</span>
+        <div class="status-dot"></div>
+      </div>
+      <div class="clue-text">
+        500 in Roman numerals. The 4th.<br>
+        In music, the note a half-step below E♭ enharmonically.<br>
+        The derivative symbol in Leibniz notation begins with me.
+      </div>
+      <div class="input-row">
+        <input class="answer-input" maxlength="1" data-ans="d" data-pos="7" id="i8" autocomplete="off" spellcheck="false">
+        <button class="submit-btn" onclick="attempt(8)">SUBMIT</button>
+        <span class="attempts" id="att-8">■■■■■</span>
+        <span class="fail-msg" id="fail-8">DENIED</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="output-panel">
+    <div class="key-display">
+      <div class="key-cell" id="kc-0">·</div>
+      <div class="key-cell" id="kc-1">·</div>
+      <div class="key-cell" id="kc-2">·</div>
+      <div class="key-cell" id="kc-3">·</div>
+      <div class="key-cell" id="kc-4">·</div>
+      <div class="key-cell" id="kc-5">·</div>
+      <div class="key-cell" id="kc-6">·</div>
+      <div class="key-cell" id="kc-7">·</div>
+    </div>
+    <div class="decrypt-line" id="decrypt-label">AWAITING CIPHER SOLUTIONS...</div>
+    <div class="success-line" id="success-line">✓ ACCESS GRANTED — CONNECT NOW</div>
+  </div>
+</div>
+
+<script>
+  const maxAttempts = 5;
+  const attCount = [5,5,5,5,5,5,5,5];
+  const solved = [false,false,false,false,false,false,false,false];
+
+  function renderAttempts(n) {
+    const idx = n - 1;
+    const rem = attCount[idx];
+    const el = document.getElementById('att-' + n);
+    let s = '';
+    for (let i = 0; i < maxAttempts; i++) s += i < rem ? '■' : '□';
+    el.textContent = s;
+    if (rem <= 2) el.classList.add('warn');
+  }
+
+  function attempt(n) {
+    if (solved[n-1]) return;
+    const inp = document.getElementById('i' + n);
+    const val = inp.value.trim().toLowerCase();
+    const ans = inp.dataset.ans;
+    const pos = parseInt(inp.dataset.pos);
+    const failEl = document.getElementById('fail-' + n);
+
+    if (val === ans) {
+      inp.classList.add('ok');
+      document.getElementById('clue-' + n).classList.add('cracked');
+      solved[n-1] = true;
+      failEl.classList.remove('show');
+      revealKey(pos, ans);
+      updateProgress();
+    } else {
+      attCount[n-1] = Math.max(0, attCount[n-1] - 1);
+      renderAttempts(n);
+      inp.value = '';
+      inp.classList.remove('fail');
+      void inp.offsetWidth;
+      inp.classList.add('fail');
+      setTimeout(() => inp.classList.remove('fail'), 400);
+      failEl.classList.add('show');
+      setTimeout(() => failEl.classList.remove('show'), 1800);
+
+      if (attCount[n-1] === 0) {
+        inp.disabled = true;
+        document.querySelector('#clue-' + n + ' .submit-btn').disabled = true;
+        inp.placeholder = '✗';
+        inp.style.borderColor = '#330a0a';
+        inp.style.color = '#330a0a';
+      }
+    }
+  }
+
+  function revealKey(pos, letter) {
+    const cell = document.getElementById('kc-' + pos);
+    cell.textContent = letter;
+    cell.classList.add('revealed');
+    if (solved.every(Boolean)) {
+      setTimeout(() => {
+        document.querySelectorAll('.key-cell').forEach(c => c.classList.add('all-revealed'));
+        document.getElementById('decrypt-label').classList.remove('active');
+        document.getElementById('decrypt-label').style.display = 'none';
+        document.getElementById('success-line').classList.add('show');
+      }, 400);
+    }
+  }
+
+  function updateProgress() {
+    const count = solved.filter(Boolean).length;
+    document.getElementById('progress').style.width = (count / 8 * 100) + '%';
+    if (count > 0 && count < 8) {
+      document.getElementById('decrypt-label').textContent = `DECRYPTING... ${count}/8 CIPHERS SOLVED`;
+      document.getElementById('decrypt-label').classList.add('active');
+    }
+  }
+
+  // Enter key support
+  document.querySelectorAll('.answer-input').forEach(inp => {
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const n = inp.id.replace('i', '');
+        attempt(parseInt(n));
+      }
+    });
+    // Force lowercase display
+    inp.addEventListener('input', () => { inp.value = inp.value.toLowerCase(); });
+  });
+
+  // Init attempt displays
+  for (let i = 1; i <= 8; i++) renderAttempts(i);
+</script>
+</body>
+</html>
